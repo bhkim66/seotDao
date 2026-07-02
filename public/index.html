@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>섯다 - 친구들과 한판</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 로그인 / 회원가입 -->
+<div id="screen-auth" class="screen">
+  <div class="auth-box">
+    <h1 class="logo">🎴 섯다</h1>
+    <p class="logo-sub">친구들과 즐기는 한판 승부</p>
+    <div class="auth-tabs">
+      <button id="tab-login" class="tab active">로그인</button>
+      <button id="tab-register" class="tab">회원가입</button>
+    </div>
+    <input id="auth-username" placeholder="닉네임 (2~12자)" maxlength="12" autocomplete="username">
+    <input id="auth-password" type="password" placeholder="비밀번호 (4자 이상)" autocomplete="current-password">
+    <button id="auth-submit" class="btn-primary">로그인</button>
+    <p id="auth-error" class="auth-error"></p>
+    <p class="auth-hint">신규 가입 시 게임머니 <b>1억</b> 지급!</p>
+  </div>
+</div>
+
+<!-- 로비 -->
+<div id="screen-lobby" class="screen" hidden>
+  <header class="topbar">
+    <span class="logo-small">🎴 섯다</span>
+    <div class="userinfo">
+      <span id="lobby-nick"></span>
+      <span id="lobby-money" class="money"></span>
+      <button id="btn-jokbo" class="btn-ghost">족보</button>
+      <button id="btn-logout" class="btn-ghost">로그아웃</button>
+    </div>
+  </header>
+  <main class="lobby-main">
+    <div class="lobby-head">
+      <h2>게임 방 목록</h2>
+      <button id="btn-create-room" class="btn-primary">+ 방 만들기</button>
+    </div>
+    <div id="room-list" class="room-list"></div>
+  </main>
+</div>
+
+<!-- 게임 방 -->
+<div id="screen-room" class="screen" hidden>
+  <header class="topbar in-game">
+    <span id="room-title" class="room-title"></span>
+    <div class="userinfo">
+      <span id="room-money" class="money"></span>
+      <button id="btn-jokbo2" class="btn-ghost">족보</button>
+      <button id="btn-leave" class="btn-danger">나가기</button>
+    </div>
+  </header>
+
+  <div class="table-area">
+    <div class="felt">
+      <div class="table-oval"></div>
+      <div class="pot-area">
+        <div id="pot-label" class="pot-label"></div>
+        <div id="carry-label" class="carry-label" hidden></div>
+      </div>
+      <div id="seats"></div>
+      <div id="result-banner" class="result-banner" hidden></div>
+      <div id="wait-panel" class="wait-panel" hidden>
+        <div id="wait-msg"></div>
+        <button id="btn-ready" class="btn-primary big">준비</button>
+        <button id="btn-start" class="btn-gold big" hidden>게임 시작</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="action-bar" class="action-bar" hidden>
+    <div id="turn-timer" class="turn-timer"><div id="turn-timer-fill"></div></div>
+    <div class="action-btns">
+      <button data-act="die"    class="act-btn die">다이</button>
+      <button data-act="check"  class="act-btn">체크</button>
+      <button data-act="call"   class="act-btn">콜</button>
+      <button data-act="bbing"  class="act-btn">삥</button>
+      <button data-act="ddadang" class="act-btn">따당</button>
+      <button data-act="half"   class="act-btn">하프</button>
+      <button data-act="allin"  class="act-btn allin">올인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 족보 모달 -->
+<div id="jokbo-modal" class="modal" hidden>
+  <div class="modal-box">
+    <h3>섯다 족보</h3>
+    <div class="jokbo-list">
+      <div class="jokbo-row top"><b>38광땡</b><span>3월 광 + 8월 광 (최강)</span></div>
+      <div class="jokbo-row top"><b>18광땡</b><span>1월 광 + 8월 광</span></div>
+      <div class="jokbo-row top"><b>13광땡</b><span>1월 광 + 3월 광</span></div>
+      <div class="jokbo-row sp"><b>암행어사</b><span>4·7 — 13/18광땡을 잡음</span></div>
+      <div class="jokbo-row"><b>장땡~1땡</b><span>같은 월 두 장 (10땡이 최고)</span></div>
+      <div class="jokbo-row sp"><b>땡잡이</b><span>3·7 — 장땡 이하 땡을 잡음</span></div>
+      <div class="jokbo-row"><b>알리</b><span>1·2</span></div>
+      <div class="jokbo-row"><b>독사</b><span>1·4</span></div>
+      <div class="jokbo-row"><b>구삥</b><span>1·9</span></div>
+      <div class="jokbo-row"><b>장삥</b><span>1·10</span></div>
+      <div class="jokbo-row"><b>장사</b><span>4·10</span></div>
+      <div class="jokbo-row"><b>세륙</b><span>4·6</span></div>
+      <div class="jokbo-row"><b>갑오~1끗</b><span>두 장 합의 끝자리 (9끗=갑오)</span></div>
+      <div class="jokbo-row"><b>망통</b><span>끝자리 0 (최하)</span></div>
+      <div class="jokbo-row sp"><b>구사</b><span>4·9 — 승자가 알리 이하면 재경기</span></div>
+      <div class="jokbo-row sp"><b>멍텅구리구사</b><span>4열끗·9열끗 — 승자가 장땡 이하면 재경기</span></div>
+    </div>
+    <button id="btn-jokbo-close" class="btn-primary">닫기</button>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="cards.js"></script>
+<script src="client.js"></script>
+</body>
+</html>
