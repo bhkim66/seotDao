@@ -34,8 +34,8 @@ async function init() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
   if (url && key) {
     console.log(`[db] Supabase 연결 시도: url="${url}", key.length=${key.length}, key.role=${keyRole(key)}`);
-    if (keyRole(key) === 'anon') {
-      console.warn('[db] ⚠ anon 키가 설정되어 있습니다. RLS 때문에 읽기/쓰기가 전부 거부됩니다. service_role 키를 사용하세요!');
+    if (keyRole(key) === 'anon' || key.startsWith('sb_publishable_')) {
+      console.warn('[db] ⚠ 공개용(anon/publishable) 키가 설정되어 있습니다. RLS 때문에 읽기/쓰기가 전부 거부됩니다. service_role(eyJ...) 또는 sb_secret_... 키를 사용하세요!');
     }
     const { createClient } = require('@supabase/supabase-js');
     supabase = createClient(url, key, { auth: { persistSession: false } });
