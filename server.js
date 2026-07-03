@@ -11,6 +11,10 @@ const { createDeck, shuffle, evaluate, decideWinners } = require('./game');
 const PORT = process.env.PORT || 3100;
 const DEBUG = !!process.env.SEOTDA_DEBUG;
 const dlog = (...a) => { if (DEBUG) console.log('[debug]', ...a); };
+
+// 예기치 못한 오류도 로그에 남도록 (Render 로그에서 확인 가능)
+process.on('unhandledRejection', (e) => console.error('[fatal] 처리되지 않은 Promise 오류:', e));
+process.on('uncaughtException', (e) => console.error('[fatal] 처리되지 않은 예외:', e));
 const START_MONEY = 100_000_000; // 기본 지급 1억
 const ANTE = 10_000; // 판돈(삥 단위)
 const TURN_TIME = 30_000; // 베팅 제한시간
@@ -37,9 +41,11 @@ app.post('/api/register', async (req, res) => {
   try {
     await db.createUser(username, { pwHash: bcrypt.hashSync(password, 10), money: START_MONEY, token, wins: 0, losses: 0 });
   } catch (e) {
+    if (e.message !== 'exists') console.error(`[register] 저장소 오류 (${username}):`, e);
     return res.status(e.message === 'exists' ? 409 : 500)
       .json({ error: e.message === 'exists' ? '이미 존재하는 닉네임입니다.' : '저장소 오류가 발생했습니다.' });
   }
+  console.log(`[register] 가입 완료: ${username}`);
   res.json({ token, username, money: START_MONEY });
 });
 

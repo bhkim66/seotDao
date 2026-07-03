@@ -20,15 +20,28 @@ let resultsFile = null;
 let saveTimer = null;
 const dirty = new Set();
 
+// Supabase 오류를 상세 문자열로 (message 외에 code/details/hint까지)
+const errInfo = (e) => `${e.message} [code=${e.code || '-'}] [details=${e.details || '-'}] [hint=${e.hint || '-'}]`;
+
+// JWT 키의 role 확인 (anon 키를 잘못 넣은 경우 감지용)
+function keyRole(key) {
+  try { return JSON.parse(Buffer.from(key.split('.')[1], 'base64').toString()).role || '?'; }
+  catch { return '?'; }
+}
+
 async function init() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
   if (url && key) {
+    console.log(`[db] Supabase 연결 시도: url="${url}", key.length=${key.length}, key.role=${keyRole(key)}`);
+    if (keyRole(key) === 'anon') {
+      console.warn('[db] ⚠ anon 키가 설정되어 있습니다. RLS 때문에 읽기/쓰기가 전부 거부됩니다. service_role 키를 사용하세요!');
+    }
     const { createClient } = require('@supabase/supabase-js');
     supabase = createClient(url, key, { auth: { persistSession: false } });
     // 연결 확인
     const { error } = await supabase.from('seotda_users').select('username', { head: true, count: 'exact' });
-    if (error) throw new Error(`Supabase 연결 실패: ${error.message} (supabase.sql 스키마를 먼저 실행했는지 확인하세요)`);
+    if (error) throw new Error(`Supabase 연결 실패: ${errInfo(error)} (supabase.sql 스키마를 먼저 실행했는지 확인하세요)`);
     console.log('[db] Supabase 저장소 사용');
   } else {
     const dataDir = path.join(__dirname, 'data');
@@ -48,7 +61,7 @@ async function getUser(username) {
   if (users[username]) return users[username];
   if (supabase) {
     const { data, error } = await supabase.from('seotda_users').select('*').eq('username', username).maybeSingle();
-    if (error) { console.error('[db] 유저 조회 실패:', error.message); return null; }
+    if (error) { console.error(`[db] 유저 조회 실패 (${username}):`, errInfo(error)); return null; }
     if (data) { users[username] = rowToUser(data); return users[username]; }
   }
   return null;
@@ -58,7 +71,11 @@ async function getUser(username) {
 async function createUser(username, rec) {
   if (supabase) {
     const { error } = await supabase.from('seotda_users').insert(userToRow(username, rec));
-    if (error) throw new Error(error.code === '23505' ? 'exists' : error.message);
+    if (error) {
+      if (error.code !== '23505') console.error(`[db] 유저 생성 실패 (${username}):`, errInfo(error));
+      throw new Error(error.code === '23505' ? 'exists' : error.message);
+    }
+    console.log(`[db] 유저 생성됨: ${username}`);
   }
   users[username] = rec;
   if (!supabase) save(username);
@@ -79,7 +96,7 @@ async function flush() {
     const rows = batch.filter((n) => users[n]).map((n) => userToRow(n, users[n]));
     if (!rows.length) return;
     const { error } = await supabase.from('seotda_users').upsert(rows);
-    if (error) console.error('[db] 유저 저장 실패:', error.message);
+    if (error) console.error(`[db] 유저 저장 실패 (${rows.map((r) => r.username).join(',')}):`, errInfo(error));
   } else if (jsonFile) {
     fs.writeFile(jsonFile, JSON.stringify(users, null, 2), () => {});
   }
@@ -91,7 +108,7 @@ function recordResults(rows) {
   const stamped = rows.map((r) => ({ ...r, played_at: new Date().toISOString() }));
   if (supabase) {
     supabase.from('seotda_game_results').insert(stamped).then(({ error }) => {
-      if (error) console.error('[db] 게임 결과 기록 실패:', error.message);
+      if (error) console.error('[db] 게임 결과 기록 실패:', errInfo(error));
     });
   } else if (resultsFile) {
     fs.appendFile(resultsFile, stamped.map((r) => JSON.stringify(r)).join('\n') + '\n', () => {});
